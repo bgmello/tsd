@@ -23,7 +23,7 @@ def tsd_trace_regression(X, Y, max_iters=100, verbose=True):
 
         for (i, j) in coord:
 
-            theta = minimize_scalar(lambda t: h(X, Y, B + (np.outer(np.arange(n) == i, np.arange(n) == j)) * theta)).x
+            theta = minimize_scalar(lambda t: h(X, Y, B + (np.outer(np.arange(n) == i, np.arange(n) == j)) * t)).x
 
             B[i, j] += theta
 
