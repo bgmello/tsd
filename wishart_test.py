@@ -1,5 +1,7 @@
 from tsd import tsd_trace_regression
+import functools
 from rgd import rgd_trace_regression
+from multiprocessing.pool import ThreadPool
 
 import numpy as np
 import pandas as pd
@@ -23,18 +25,22 @@ def generate_wishart(m, d, r):
 
 
 if __name__ == "__main__":
-    # test 1
-    X, Y = generate_wishart(1000, 50, 50)
+    iters = 1000
 
-    _, objectives_t = tsd_trace_regression(X, Y, max_iters=1000, verbose=True)
-    _, objectives_r = rgd_trace_regression(X, Y, max_iters=1000)
+    def smap(f):
+        return f()
 
-    pd.DataFrame({"iterations": np.arange(1000), "tsd": objectives_t, "rgd": objectives_r}).to_csv("wishart_1000_50_50.csv", index=False)
+    with ThreadPool(4) as pool:
+        partials = [
+                functools.partial(tsd_trace_regression, *generate_wishart(1000, 50, 50), max_iters=iters, verbose=True),
+                functools.partial(rgd_trace_regression, *generate_wishart(1000, 50, 50), max_iters=iters),
+                functools.partial(tsd_trace_regression, *generate_wishart(1000, 50, 10), max_iters=iters, verbose=True),
+                functools.partial(rgd_trace_regression, *generate_wishart(1000, 50, 10), max_iters=iters)
+                ]
 
-    # test 2
-    X, Y = generate_wishart(1000, 50, 10)
+        results = pool.map(smap, partials)
+        pool.close()
+        pool.join()
 
-    _, objectives_t = tsd_trace_regression(X, Y, max_iters=1000, verbose=True)
-    _, objectives_r = rgd_trace_regression(X, Y, max_iters=1000)
-
-    pd.DataFrame({"iterations": np.arange(1000), "tsd": objectives_t, "rgd": objectives_r}).to_csv("wishart_1000_50_10.csv", index=False)
+    pd.DataFrame({"iterations": np.arange(iters), "tsd": results[0][1], "rgd": results[1][1]}).to_csv("wishart_1000_50_50.csv", index=False)
+    pd.DataFrame({"iterations": np.arange(iters), "tsd": results[2][1], "rgd": results[3][1]}).to_csv("wishart_1000_50_10.csv", index=False)

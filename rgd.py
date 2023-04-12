@@ -31,7 +31,7 @@ def rgd_trace_regression(X, Y, max_iters=100):
                 G[i, j] = -4 * np.sum((Y.flatten() - F) * X[:, i] * V[j])
 
         eta_t = minimize_scalar(lambda eta: h(X, Y, B_eta(B, G, eta))).x
-        B = B_eta(eta_t)
-        objectives.append(h(B))
+        B = B_eta(B, G, eta_t)
+        objectives.append(h(X, Y, B))
 
     return B, objectives
