@@ -1,4 +1,4 @@
-from tsd import tsd_trace_regression
+from tsd import TSDTraceRegression
 from rgd import rgd_trace_regression
 
 import numpy as np
@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     for params in test_data:
         X, Y = generate_wishart(*params)
-        _, objectives_t, times_t = tsd_trace_regression(X, Y, max_iters, verbose=True)
+        _, objectives_t, times_t = TSDTraceRegression().fit(X, Y, max_iters, verbose=True)
         _, objectives_r, times_r = rgd_trace_regression(X, Y, max_iters)
         pd.DataFrame({"iterations": np.arange(max_iters+1),
                       "tsd_objective": objectives_t,
