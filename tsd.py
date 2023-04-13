@@ -18,7 +18,7 @@ def h_B_plus_theta(coeffs, theta):
     )
 
 
-@profile_each_line
+# @profile_each_line
 def tsd_trace_regression(X, Y, max_iters=100, verbose=True):
     N, n = X.shape
     B = np.identity(n)
@@ -27,6 +27,7 @@ def tsd_trace_regression(X, Y, max_iters=100, verbose=True):
     times = []
 
     B_t_X = B.T @ X.T
+    f_B_X = np.sum(B_t_X * B_t_X, axis=0)
     X_columns = [X[:, i] for i in range(n)]
     X_columns_squared = [X_columns[i]**2 for i in range(n)]
     X_columns_cubed = [X_columns_squared[i] * X_columns[i] for i in range(n)]
@@ -40,7 +41,6 @@ def tsd_trace_regression(X, Y, max_iters=100, verbose=True):
 
         for i, j in coord:
 
-            f_B_X = np.sum(B_t_X * B_t_X, axis=0)
             Y_minus_f = Y - f_B_X
             coeffs = [
                 X_columns_quadrupled_sum[i],
@@ -52,6 +52,7 @@ def tsd_trace_regression(X, Y, max_iters=100, verbose=True):
             theta = minimize_scalar(min_funcion).x
 
             B[i, j] += theta
+            f_B_X += 2*theta * X_columns[i].T*B_t_X[j]+(theta * X_columns[i].T)**2
             B_t_X[j] += theta * X_columns[i].T
 
         loop_time = time.time() - start
