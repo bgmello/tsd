@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.optimize import minimize_scalar
 from utils import h
+import time
 
 
 def B_eta(B, G, eta):
@@ -19,8 +20,12 @@ def rgd_trace_regression(X, Y, max_iters=100):
     N, n = X.shape
     B = np.identity(n)
     objectives = []
+    times = []
+
+    objectives.append(h(X, Y, B))
 
     for t in range(max_iters):
+        start = time.time()
         B_prev = B.copy()
         V = B_prev.T @ X.T
         F = np.sum(V * V, axis=0)
@@ -33,5 +38,6 @@ def rgd_trace_regression(X, Y, max_iters=100):
         eta_t = minimize_scalar(lambda eta: h(X, Y, B_eta(B, G, eta))).x
         B = B_eta(B, G, eta_t)
         objectives.append(h(X, Y, B))
+        times.append(time.time() - start)
 
-    return B, objectives
+    return B, objectives, times
