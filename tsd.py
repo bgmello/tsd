@@ -24,7 +24,7 @@ def tsd_trace_regression(X, Y, max_iters=100, verbose=True):
     B = np.identity(n)
     coord = [(i, j) for i in range(n) for j in range(i, n)]
     objectives = [h(X, Y, B)]
-    times = []
+    times = [np.nan]
 
     B_t_X = B.T @ X.T
     f_B_X = np.sum(B_t_X * B_t_X, axis=0)
