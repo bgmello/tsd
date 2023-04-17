@@ -16,13 +16,16 @@ def B_eta(B, G, eta):
     return B_eta
 
 
-def rgd_trace_regression(X, Y, max_iters=100):
+def rgd_trace_regression(X, Y, tot_time):
     N, n = X.shape
     B = np.identity(n)
     objectives = [h(X, Y, B)]
-    times = [np.nan]
+    times = [0]
+    current_time = 0
+    i = 0
 
-    for t in range(max_iters):
+    while True:
+        i += 1
         start = time.time()
         B_prev = B.copy()
         V = B_prev.T @ X.T
@@ -37,5 +40,9 @@ def rgd_trace_regression(X, Y, max_iters=100):
         B = B_eta(B, G, eta_t)
         objectives.append(h(X, Y, B))
         times.append(time.time() - start)
+        current_time += times[-1]
+
+        if current_time > tot_time:
+            break
 
     return B, objectives, times

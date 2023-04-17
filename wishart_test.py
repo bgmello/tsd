@@ -1,8 +1,8 @@
 from tsd import TSDTraceRegression
+import json
 from rgd import rgd_trace_regression
 
 import numpy as np
-import pandas as pd
 
 np.random.seed(42)
 
@@ -24,7 +24,7 @@ def generate_wishart(m, d, r):
 
 
 if __name__ == "__main__":
-    max_iters = 30
+    tot_time = 20
 
     test_data = [
         (1000, 50, 50),
@@ -33,10 +33,11 @@ if __name__ == "__main__":
 
     for params in test_data:
         X, Y = generate_wishart(*params)
-        _, objectives_t, times_t = TSDTraceRegression().fit(X, Y, max_iters, verbose=True)
-        _, objectives_r, times_r = rgd_trace_regression(X, Y, max_iters)
-        pd.DataFrame({"iterations": np.arange(max_iters+1),
-                      "tsd_objective": objectives_t,
-                      "rgd_objective": objectives_r,
-                      "tsd_time": times_t,
-                      "rgd_time": times_r}).to_csv(f"wishart_{'_'.join([str(param) for param in params])}.csv", index=False)
+        _, objectives_t, times_t = TSDTraceRegression().fit(X, Y, tot_time, verbose=True)
+        _, objectives_r, times_r = rgd_trace_regression(X, Y, tot_time)
+        with open(f"wishart_{'_'.join([str(param) for param in params])}.json", "w") as f:
+            f.write(json.dumps({"max_time": tot_time,
+                                "tsd_objective": objectives_t,
+                                "rgd_objective": objectives_r,
+                                "tsd_time": times_t,
+                                "rgd_time": times_r}))

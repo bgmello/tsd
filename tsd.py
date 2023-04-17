@@ -5,17 +5,18 @@ import time
 from functools import partial
 from utils import h
 
+
 class TSDTraceRegression:
     def __init__(self):
         pass
 
-    def fit(self, X, Y, max_iters=100, verbose=True):
+    def fit(self, X, Y, tot_time, verbose=True):
         self.X = X
         self.Y = Y
         N, n = X.shape
         self.B = np.identity(n)
         self.objectives = [h(X, Y, self.B)]
-        self.times = [np.nan]
+        self.times = [0]
         self.B_t_X = self.B.T @ X.T
         self.f_B_X = np.sum(self.B_t_X * self.B_t_X, axis=0)
         self.X_columns = [X[:, i] for i in range(n)]
@@ -27,27 +28,21 @@ class TSDTraceRegression:
         self.X_columns_quadrupled_sum = [
             np.sum(self.X_columns_quadrupled[i]) for i in range(n)
         ]
+        self.verbose = verbose
 
-        coord = [(i, j) for i in range(n) for j in range(i, n)]
-        objectives = [h(X, Y, self.B)]
-        times = [np.nan]
+        self.coord = [(i, j) for i in range(n) for j in range(i, n)]
 
-        for t in range(max_iters):
-            start = time.time()
-            random.shuffle(coord)
-            loop_time = time.time() - start
+        current_time = 0
+        i = 0
 
-            list(map(self.update_per_coord, coord))
+        while True:
+            self.run_iteration(i)
+            i += 1
+            current_time += self.times[-1]
+            if current_time > tot_time:
+                break
 
-            h_B = h(X, Y, self.B)
-
-            if verbose:
-                print(f"Iteration: {t+1}, objective: {h_B}, time: {loop_time}")
-
-            objectives.append(h_B)
-            times.append(loop_time)
-
-        return self.B, objectives, times
+        return self.B, self.objectives, self.times
 
     @staticmethod
     def h_B_plus_theta(coeffs, theta):
@@ -81,3 +76,19 @@ class TSDTraceRegression:
             + (theta * self.X_columns[i].T) ** 2
         )
         self.B_t_X[j] += theta * self.X_columns[i].T
+
+    def run_iteration(self, t):
+        start = time.time()
+        random.shuffle(self.coord)
+
+        list(map(self.update_per_coord, self.coord))
+
+        loop_time = time.time() - start
+
+        h_B = h(self.X, self.Y, self.B)
+
+        if self.verbose:
+            print(f"Iteration: {t+1}, objective: {h_B}, time: {loop_time}")
+
+        self.objectives.append(h_B)
+        self.times.append(loop_time)
