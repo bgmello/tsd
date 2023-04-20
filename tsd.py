@@ -17,6 +17,7 @@ class TSDTraceRegression:
         self.B = np.identity(n)
         self.objectives = [h(X, Y, self.B)]
         self.times = [0]
+        self.inner_times = []
         self.B_t_X = self.B.T @ X.T
         self.f_B_X = np.sum(self.B_t_X * self.B_t_X, axis=0)
         self.X_columns = [X[:, i] for i in range(n)]
@@ -42,7 +43,7 @@ class TSDTraceRegression:
             if current_time > tot_time:
                 break
 
-        return self.B, self.objectives, self.times
+        return self.B, self.objectives, self.times, self.inner_times
 
     @staticmethod
     def h_B_plus_theta(coeffs, theta):
@@ -57,6 +58,7 @@ class TSDTraceRegression:
         )
 
     def update_per_coord(self, pair):
+        start = time.time()
         i, j = pair
         Y_minus_f = self.Y - self.f_B_X
         coeffs = [
@@ -76,6 +78,7 @@ class TSDTraceRegression:
             + (theta * self.X_columns[i].T) ** 2
         )
         self.B_t_X[j] += theta * self.X_columns[i].T
+        self.inner_times.append(time.time()-start)
 
     def run_iteration(self, t):
         start = time.time()
