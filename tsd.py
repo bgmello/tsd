@@ -10,11 +10,12 @@ class TSDTraceRegression:
     def __init__(self):
         pass
 
-    def fit(self, X, Y, tot_time, verbose=True):
+    def fit(self, X, Y, tot_time, verbose=True, randomized=False):
         self.X = X
         self.Y = Y
         N, n = X.shape
         self.B = np.identity(n)
+        self.randomized = randomized
         self.objectives = [h(X, Y, self.B)]
         self.times = [0]
         self.inner_times = []
@@ -84,7 +85,11 @@ class TSDTraceRegression:
         start = time.time()
         random.shuffle(self.coord)
 
-        list(map(self.update_per_coord, self.coord))
+        if self.randomized:
+            list(map(self.update_per_coord, self.coord[0:1]))
+
+        else:
+            list(map(self.update_per_coord, self.coord))
 
         loop_time = time.time() - start
 

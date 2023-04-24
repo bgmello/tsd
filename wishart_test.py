@@ -34,11 +34,15 @@ if __name__ == "__main__":
     for params in test_data:
         X, Y = generate_wishart(*params)
         _, objectives_t, times_t, inner_times = TSDTraceRegression().fit(X, Y, tot_time, verbose=True)
+        _, objectives_t_rand, times_t_rand, inner_times_rand = TSDTraceRegression().fit(X, Y, tot_time, verbose=True, randomized=True)
         _, objectives_r, times_r = rgd_trace_regression(X, Y, tot_time)
         with open(f"wishart_{'_'.join([str(param) for param in params])}.json", "w") as f:
             f.write(json.dumps({"max_time": tot_time,
                                 "tsd_objective": objectives_t,
+                                "tsd_objective_rand": objectives_t_rand,
                                 "rgd_objective": objectives_r,
                                 "tsd_time": times_t,
+                                "tsd_time_rand": times_t_rand,
                                 "tsd_inner_time": inner_times,
+                                "tsd_inner_time_rand": inner_times_rand,
                                 "rgd_time": times_r}))
