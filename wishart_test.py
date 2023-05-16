@@ -4,15 +4,15 @@ from rgd import rgd_trace_regression
 import sys
 
 from multiprocessing import Pool
+from multiprocessing import Manager
 import numpy as np
 
-np.random.seed(42)
-
+num_seeds = int(sys.argv[2])
 tot_time = int(sys.argv[1])
 
-
-def generate_wishart(m, d, r):
+def generate_wishart(m, d, r, seed):
     sigma = 1e-1
+    np.random.seed(seed)
 
     X = np.zeros((m, d))
     Y = np.zeros(m)
@@ -27,13 +27,15 @@ def generate_wishart(m, d, r):
     return X, Y
 
 
-def generate_data(params):
-    X, Y = generate_wishart(*params)
+def generate_data(input_):
+
+    m, d, r, seed = input_
+
+    X, Y = generate_wishart(m, d, r, seed)
     _, objectives_t, times_t, inner_times = TSDTraceRegression().fit(X, Y, tot_time, verbose=True)
     _, objectives_t_rand, times_t_rand, inner_times_rand = TSDTraceRegression().fit(X, Y, tot_time, verbose=True, randomized=True)
     _, objectives_r, times_r = rgd_trace_regression(X, Y, tot_time)
-    with open(f"wishart_{'_'.join([str(param) for param in params])}.json", "w") as f:
-        f.write(json.dumps({"max_time": tot_time,
+    results[(m,d,r)].append({"max_time": tot_time,
                             "tsd_objective": objectives_t,
                             "tsd_objective_rand": objectives_t_rand,
                             "rgd_objective": objectives_r,
@@ -41,20 +43,32 @@ def generate_data(params):
                             "tsd_time_rand": times_t_rand,
                             "tsd_inner_time": inner_times,
                             "tsd_inner_time_rand": inner_times_rand,
-                            "rgd_time": times_r}))
-
+                            "rgd_time": times_r})
 
 if __name__ == "__main__":
 
-    test_data = [
-        (1000, 50, 50),
-        (1000, 50, 10),
-        (10000, 50, 50),
-        (10000, 50, 100),
-        (100000, 50, 50),
-        (100000, 500, 500),
-        (100000, 500, 100),
-    ]
+    with Manager() as manager:
 
-    pool = Pool(processes=len(test_data))
-    pool.map(generate_data, test_data)
+        results = manager.dict()
+
+        ms = [1000, 10000]
+        ds = [50, 100, 500, 1000]
+        rs = [10, 50]
+
+        inputs = []
+        for m in ms:
+            for d in ds:
+                for r in rs:
+                    results[(m,d,r)] = []
+                    for seed in range(num_seeds):
+                        inputs.append((m,d,r, seed))
+
+
+        with Pool() as p:
+            p.map(generate_data, inputs)
+        
+        for m in ms:
+            for d in ds:
+                for r in rs:
+                    with open(f"data/wishart_{m}_{d}_{r}.json", "w") as f:
+                        f.write(json.dumps(results[(m,d,r)]))
