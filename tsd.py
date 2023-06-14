@@ -3,7 +3,6 @@ from scipy.optimize import minimize_scalar
 import time
 from functools import partial
 from utils import h
-from profiler import profile_each_line
 
 
 class TSDTraceRegression:
@@ -25,7 +24,6 @@ class TSDTraceRegression:
         self.B_t_X = self.B.T @ X.T
         self.f_B_X = np.sum(self.B_t_X * self.B_t_X, axis=0)
         self.X_columns = [X[:, i] for i in range(n)]
-        self.X_columns_squared = [self.X_columns[i] ** 2 for i in range(n)]
         self.verbose = verbose
 
         self.coord = np.array([(i, j) for i in range(n) for j in range(i, n)])
