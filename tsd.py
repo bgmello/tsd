@@ -3,6 +3,7 @@ from scipy.optimize import minimize_scalar
 import time
 from functools import partial
 from utils import h
+from profiler import profile_each_line
 
 
 class TSDTraceRegression:
@@ -38,21 +39,25 @@ class TSDTraceRegression:
                 break
 
         return self.B, self.objectives, self.times, self.inner_times, self.inner_obj
-
-    def h_B_plus_theta(self, i, j, theta):
-        return np.sum((self.Y-self.f_B_X-2*theta*self.X_columns[i]*self.B_t_X[j]-theta**2*self.X_columns_squared[i])**2)
+    
+    def h_B_plus_theta(self, y_minus_f_B_X, i, j, theta):
+        theta_times_Xi = theta * self.X_columns[i]
+        theta_squared_times_Xi2 = theta_times_Xi ** 2 
+        temp = y_minus_f_B_X - 2 * theta_times_Xi * self.B_t_X[j] - theta_squared_times_Xi2
+        return np.sum(temp ** 2)
 
     def update_per_coord(self, pair):
         start = time.time()
         i, j = pair
 
         # find theta
-        min_function = partial(self.h_B_plus_theta, i, j)
+        min_function = partial(self.h_B_plus_theta, self.Y-self.f_B_X, i, j)
         results = minimize_scalar(min_function)
         theta, new_obj = results.x, results.fun
 
         # update B
         self.B[i, j] += theta
+
 
         # update values that depend on B
         self.f_B_X += (
