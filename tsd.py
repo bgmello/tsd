@@ -1,7 +1,6 @@
 import numpy as np
-from scipy.optimize import minimize_scalar
 import time
-from functools import partial
+from profiler import profile_each_line
 from utils import h
 
 
@@ -44,15 +43,18 @@ class TSDTraceRegression:
         temp = self.Y - self.f_B_X - 2 * theta_times_Xi * self.B_t_X[j] - theta_squared_times_Xi2
         return np.sum(temp ** 2)
 
+    @profile_each_line
     def find_best_theta(self, i, j, bounds=[None, None]):
         g = self.X_columns[i]
+        g_squared = g**2
         h = self.B_t_X[j]
         f = self.Y - self.f_B_X
+        g_h = g*h
         coeffs = [
-            np.sum(g**4),
-            3*np.sum((g**3)*h),
-            np.sum((g**2)*((2*(h**2))-f)),
-            -np.sum(f*g*h)
+            np.sum(g_squared*g_squared),
+            3*np.sum(g_squared*g_h),
+            np.sum((g_squared)*((2*(h**2))-f)),
+            -np.sum(f*g_h)
         ]
 
         roots = np.roots(coeffs)
