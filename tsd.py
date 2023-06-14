@@ -38,24 +38,65 @@ class TSDTraceRegression:
 
         return self.B, self.objectives, self.times, self.inner_times, self.inner_obj
     
-    def h_B_plus_theta(self, y_minus_f_B_X, i, j, theta):
+    def h_B_plus_theta(self, i, j, theta):
         theta_times_Xi = theta * self.X_columns[i]
         theta_squared_times_Xi2 = theta_times_Xi ** 2 
-        temp = y_minus_f_B_X - 2 * theta_times_Xi * self.B_t_X[j] - theta_squared_times_Xi2
+        temp = self.Y - self.f_B_X - 2 * theta_times_Xi * self.B_t_X[j] - theta_squared_times_Xi2
         return np.sum(temp ** 2)
+
+    def find_best_theta(self, i, j, bounds=[None, None]):
+        g = self.X_columns[i]
+        h = self.B_t_X[j]
+        f = self.Y - self.f_B_X
+        coeffs = [
+            np.sum(g**4),
+            3*np.sum((g**3)*h),
+            np.sum((g**2)*((2*(h**2))-f)),
+            -np.sum(f*g*h)
+        ]
+
+        roots = np.roots(coeffs)
+
+        min_val = np.inf  # Initialize with the max value
+        best_theta = None
+
+        if bounds[0] is not None:
+            roots = list(roots)+[bounds[0]]
+
+        for root in roots:
+            if not np.isreal(root):
+                continue
+
+            if bounds[0] is not None and root.real < bounds[0]:
+                continue
+
+            if bounds[1] is not None and root.real > bounds[1]:
+                continue
+
+            theta = np.real(root)  # Extract the real part of the root
+
+            val = self.h_B_plus_theta(i, j, theta)
+
+            if val < min_val:  # If the current root gives a smaller h_B_plus_theta
+                min_val = val
+                best_theta = theta  # Update the best_theta
+
+        return best_theta  # Return the theta that gives the smallest h_B_plus_theta
 
     def update_per_coord(self, pair):
         start = time.time()
         i, j = pair
 
         # find theta
-        min_function = partial(self.h_B_plus_theta, self.Y-self.f_B_X, i, j)
-        results = minimize_scalar(min_function)
-        theta, new_obj = results.x, results.fun
+        if i==j:
+            theta = self.find_best_theta(i, j, bounds=[-self.B[i, j], None])
+        else:
+            theta = self.find_best_theta(i, j)
+
+        new_obj = self.h_B_plus_theta(i, j, theta)
 
         # update B
         self.B[i, j] += theta
-
 
         # update values that depend on B
         self.f_B_X += (
