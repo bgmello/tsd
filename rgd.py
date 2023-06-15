@@ -26,7 +26,7 @@ def rgd_trace_regression(X, Y, tot_time):
 
     while True:
         i += 1
-        start = time.time()
+        start = time.process_time()
         B_prev = B.copy()
         V = B_prev.T @ X.T
         F = np.sum(V * V, axis=0)
@@ -39,7 +39,7 @@ def rgd_trace_regression(X, Y, tot_time):
         eta_t = minimize_scalar(lambda eta: h(X, Y, B_eta(B, G, eta))).x
         B = B_eta(B, G, eta_t)
         objectives.append(h(X, Y, B))
-        times.append(time.time() - start)
+        times.append(time.process_time() - start)
         current_time += times[-1]
 
         if current_time > tot_time:

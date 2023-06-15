@@ -14,7 +14,7 @@ class TSDTraceRegression:
         self.Y = Y
         _, n = X.shape
         self.n = n 
-        self.inner_time = time.time()
+        self.inner_time = time.process_time()
         self.B = np.identity(n)
         self.randomized = randomized
         self.objectives = [h(X, Y, self.B)]
@@ -91,7 +91,7 @@ class TSDTraceRegression:
         return best_theta, min_val  # Return the theta that gives the smallest h_B_plus_theta
 
     def update_per_coord(self, pair):
-        start = time.time()
+        start = time.process_time()
         i, j = pair
 
         # find theta
@@ -113,20 +113,20 @@ class TSDTraceRegression:
         self.B_t_X[j] += theta_X_i_transpose
 
         # store results
-        time_inner_loop = time.time()-start
-        self.inner_times.append(time.time()-self.inner_time)
+        time_inner_loop = time.process_time()-start
+        self.inner_times.append(time.process_time()-self.inner_time)
         self.inner_obj.append(new_obj)
-        self.inner_time = time.time()
+        self.inner_time = time.process_time()
         self.current_time += time_inner_loop
 
 
     def run_iteration(self):
 
-        start = time.time()
+        start = time.process_time()
         indices = np.random.choice(len(self.coord), size=len(self.coord), replace=self.randomized)
         list(map(self.update_per_coord, self.coord[indices]))
 
         h_B = h(self.X, self.Y, self.B)
 
         self.objectives.append(h_B)
-        self.times.append(time.time()-start)
+        self.times.append(time.process_time()-start)
