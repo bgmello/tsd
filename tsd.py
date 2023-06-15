@@ -3,6 +3,7 @@ import time
 from profiler import profile_each_line
 from functools import partial
 from utils import h
+from cubic_solver import solve
 
 
 class TSDTraceRegression:
@@ -47,6 +48,7 @@ class TSDTraceRegression:
         return np.sum(temp ** 2)
 
     
+    @profile_each_line
     def find_best_theta(self, i, j, bounds=[None, None]):
         g = self.X_columns[i]
         g_squared = self.X_columns_squared[i]
@@ -60,7 +62,7 @@ class TSDTraceRegression:
             -np.sum(f*g_h)
         ]
 
-        roots = np.roots(coeffs)
+        roots = solve(*coeffs)
 
         min_val = np.inf  # Initialize with the max value
         best_theta = None
@@ -103,7 +105,7 @@ class TSDTraceRegression:
         
         # update B
         self.B[i, j] += theta
-        
+
         # update values that depend on B
         theta_X_i_transpose = theta * self.X_columns[i].T
         self.f_B_X += (
