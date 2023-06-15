@@ -9,3 +9,4 @@ def profile_each_line(func, *args, **kwargs):
         profiled_func(*args, **kwargs)
     finally:
         profiler.print_stats()
+        return func(*args, **kwargs)
