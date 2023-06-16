@@ -20,27 +20,30 @@ def merge_lines(lines: List[np.ndarray]) -> Tuple[np.array, np.array]:
     y_avgs = np.mean(consistent_ys, axis=0)
     return x_ticks, y_avgs
 
-
 def get_xs_ys(iteration: dict) -> Tuple[np.array, np.array, np.array]:
-    final_error = min(min(iteration['tsd_inner_objective']), min(iteration['tsd_inner_objective_rand']),
-                      min(iteration['rgd_objective']))
-
-    rgd_times_cum = np.array(iteration["rgd_time"]).cumsum()
-    max_time = rgd_times_cum[rgd_times_cum < iteration["max_time"]][-1]
 
     def process_algorithm(times, objectives):
         times_cum = np.array(times).cumsum()
         times_norm = (100 * times_cum / max_time)
-        objectives_norm = 100 * final_error / np.array(objectives)
+        objectives_norm = np.array(objectives)
         mask = times_norm <= 100
         return np.vstack((times_norm[mask], objectives_norm[mask])).T
+
+    rgd_times_cum = np.array(iteration["rgd_time"]).cumsum()
+    max_time = rgd_times_cum[rgd_times_cum < iteration["max_time"]][-1]
 
     tsd = process_algorithm(iteration['tsd_inner_time'], iteration['tsd_inner_objective'])
     tsd_rand = process_algorithm(iteration['tsd_inner_time_rand'], iteration['tsd_inner_objective_rand'])
     rgd = process_algorithm(iteration['rgd_time'], iteration['rgd_objective'])
 
-    return tsd, tsd_rand, rgd
+    # Get the final error based on the final objectives of each algorithm
+    final_error = min(tsd[1, -1], tsd_rand[1, -1], rgd[1, -1])
 
+    tsd[1, :] = 100 * final_error / tsd[1, :]
+    tsd_rand[1, :] = 100 * final_error / tsd_rand[1, :]
+    rgd[1, :] = 100 * final_error / rgd[1, :]
+
+    return tsd, tsd_rand, rgd
 
 def get_single_lines(data: List[dict]) -> Tuple[np.array, np.array, np.array]:
     tsds, tsds_rand, rgds = [], [], []
