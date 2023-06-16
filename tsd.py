@@ -14,7 +14,7 @@ class TSDTraceRegression:
         self.X = X
         self.Y = Y
         _, n = X.shape
-        self.n = n 
+        self.n = n
         self.inner_time = time.process_time()
         self.B = np.identity(n)
         self.randomized = randomized
@@ -43,12 +43,11 @@ class TSDTraceRegression:
 
     def h_B_plus_theta(self, Y_minus_f_B_X, i, j, theta):
         theta_times_Xi = theta * self.X_columns[i]
-        theta_squared_times_Xi2 = theta_times_Xi ** 2 
+        theta_squared_times_Xi2 = theta_times_Xi ** 2
         temp = Y_minus_f_B_X - 2 * theta_times_Xi * self.B_t_X[j] - theta_squared_times_Xi2
         return np.sum(temp ** 2)
 
-    
-    @profile_each_line
+
     def find_best_theta(self, i, j, bounds=[None, None]):
         g = self.X_columns[i]
         g_squared = self.X_columns_squared[i]
@@ -102,7 +101,7 @@ class TSDTraceRegression:
         else:
             theta, new_obj = self.find_best_theta(i, j)
 
-        
+
         # update B
         self.B[i, j] += theta
 

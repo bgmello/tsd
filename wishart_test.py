@@ -57,8 +57,8 @@ def generate_data(input_):
 
 if __name__ == "__main__":
 
-    ms = [1000]
-    ds = [50]
+    ms = [1000, 10000]
+    ds = [50, 100, 500, 1000]
     rs = [10, 50]
 
     inputs = []

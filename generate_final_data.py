@@ -2,9 +2,6 @@ import numpy as np
 import os
 import ujson as json
 import matplotlib.pyplot as plt
-import seaborn as sns
-from matplotlib.ticker import ScalarFormatter
-from matplotlib.lines import Line2D
 from typing import List, Tuple
 
 
@@ -57,7 +54,7 @@ def get_single_lines(data: List[dict]) -> Tuple[np.array, np.array, np.array]:
     return merge_lines(tsds), merge_lines(tsds_rand), merge_lines(rgds)
 
 
-def plot_single_lines(m, d, r, data: List[dict]) -> plt.Figure:
+def generate_single_lines(m, d, r, data: List[dict]) -> plt.Figure:
 
     fig, axes = plt.subplots(figsize=[10, 6], ncols=1, nrows=1, constrained_layout=True)
 
@@ -66,36 +63,24 @@ def plot_single_lines(m, d, r, data: List[dict]) -> plt.Figure:
     x_tsd, y_tsd = tsd_line
     x_tsd_rand, y_tsd_rand = tsd_rand_line
     x_rgd, y_rgd = rgd_line
-    sns.lineplot(y=y_tsd, x=x_tsd, ax=axes, linestyle='-.', color='b')
-    sns.lineplot(y=y_tsd_rand, x=x_tsd_rand,
-                 ax=axes, linestyle=':', color='g')
-    sns.lineplot(y=y_rgd, x=x_rgd,
-                 ax=axes, color='r')
 
-    axes.set(yscale="log")
-    axes.legend(title='Algorithms')
-    axes.set_xlabel('% time elapsed')
-    axes.set_ylabel('% gap closed')
-    axes.set_title(f'(m, d, r)=({m}, {d}, {r})')
-    axes.xaxis.set_major_formatter(ScalarFormatter())
-    custom_lines = [Line2D([0], [0], color='blue', lw=2),
-                    Line2D([0], [0], color='green', lw=2),
-                    Line2D([0], [0], color='red', lw=2),
-                    ]
-
-    # Add the custom legend to the figure with the specified label
-    axes.legend(custom_lines, ['det. TSD', 'rand. TSD', 'GD'])
-
-    # Optional: You can also disable the offset in the formatter
-    axes.xaxis.get_major_formatter().set_useOffset(False)
-
-    return fig
+    return {
+        "x_tsd": list(x_tsd),
+        "y_tsd": list(y_tsd),
+        "x_tsd_rand": list(x_tsd_rand),
+        "y_tsd_rand": list(y_tsd_rand),
+        "x_rgd": list(x_rgd),
+        "y_rgd": list(y_rgd)
+    }
 
 
-def plot_multi_lines(m, d, r, data: List[dict]) -> plt.Figure:
+def generate_multi_lines(m, d, r, data: List[dict]) -> plt.Figure:
     fig, axes = plt.subplots(figsize=[10, 6], ncols=1, nrows=1, constrained_layout=True)
 
+    final_data = []
+
     for iteration in data:
+
 
         tsd_line, tsd_rand_line, rgd_line = get_xs_ys(iteration)
 
@@ -104,33 +89,21 @@ def plot_multi_lines(m, d, r, data: List[dict]) -> plt.Figure:
         y_rgd = get_consistent_ys(rgd_line)
         x_ticks = np.linspace(0, 100, 201)
 
-        sns.lineplot(y=y_tsd, x=x_ticks, ax=axes, color='b')
-        sns.lineplot(y=y_tsd_rand, x=x_ticks,
-                     ax=axes, color='g')
-        sns.lineplot(y=y_rgd, x=x_ticks,
-                     ax=axes, color='r')
+        final_data.append({
+            "x_tsd": list(x_ticks),
+            "y_tsd": list(y_tsd),
+            "x_tsd_rand": list(x_ticks),
+            "y_tsd_rand": list(y_tsd_rand),
+            "x_rgd": list(x_ticks),
+            "y_rgd": list(y_rgd)
+            })
 
-    axes.set(yscale="log")
-    axes.legend(title='Algorithms')
-    axes.set_xlabel('% time elapsed')
-    axes.set_ylabel('% gap closed')
-    axes.set_title(f'(m, d, r)=({m}, {d}, {r})')
-    axes.xaxis.set_major_formatter(ScalarFormatter())
-    custom_lines = [Line2D([0], [0], color='blue', lw=2),
-                    Line2D([0], [0], color='green', lw=2),
-                    Line2D([0], [0], color='red', lw=2),
-                    ]
 
-    # Add the custom legend to the figure with the specified label
-    axes.legend(custom_lines, ['det. TSD', 'rand. TSD', 'GD'])
-
-    axes.xaxis.get_major_formatter().set_useOffset(False)
-
-    return fig
+    return final_data
 
 
 def plot_instance(m, d, r):
-    if os.path.exists(f"data/plot_{m}_{d}_{r}_multi.pdf") and os.path.exists(f"data/plot_{m}_{d}_{r}_single.pdf"):
+    if os.path.exists(f"data/final_data_{m}_{d}_{r}_multi.json") and os.path.exists(f"data/final_data_{m}_{d}_{r}_single.json"):
         return
     data = []
 
@@ -140,10 +113,12 @@ def plot_instance(m, d, r):
             with open(f"data/wishart_{m}_{d}_{r}_seed_{seed}_algo_{algo}.json", "r") as f:
                 tmp = tmp | json.loads(f.read())
         data.append(tmp)
-    if not os.path.exists(f"data/plot_{m}_{d}_{r}_single.pdf"):
-        plot_single_lines(m, d, r, data).savefig(f"data/plot_{m}_{d}_{r}_single.pdf")
-    if not os.path.exists(f"data/plot_{m}_{d}_{r}_multi.pdf"):
-        plot_multi_lines(m, d, r, data).savefig(f"data/plot_{m}_{d}_{r}_multi.pdf")
+    if not os.path.exists(f"data/final_data_{m}_{d}_{r}_single.json"):
+        with open(f"data/final_data_{m}_{d}_{r}_single.json", "w") as f:
+            f.write(json.dumps(generate_single_lines(m, d, r, data)))
+    if not os.path.exists(f"data/final_data_{m}_{d}_{r}_multi.json"):
+        with open(f"data/final_data_{m}_{d}_{r}_multi.json", "w") as f:
+            f.write(json.dumps(generate_multi_lines(m, d, r, data)))
 
 
 if __name__ == "__main__":
