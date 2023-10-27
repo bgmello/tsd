@@ -125,10 +125,9 @@ class RGD:
             self.U, self.P = self.compute_U_plus_P_plus(optimal_gamma)
 
             if time()-start>=max_time:
-                break
+                return self.U @ self.P @ self.U.T
 
-        print(self.h(0))
-        return self.U, self.P
+        return self.U @ self.P @ self.U.T
 
 # Test with some random data
 if __name__ == "__main__":
