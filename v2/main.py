@@ -1,26 +1,22 @@
 import numpy as np
 from rgd import RGD
-from fixed_rank_psd import Algorithm
-from utils import objective
-from time import time
+from v2.FRP.main import Algorithm
+import json
 
 
 if __name__ == "__main__":
     np.random.seed(42)
-    n, N, r = 10, 50000, 4
+    n, N, r = 10, 500, 4
 
     # Inputs
     X = np.random.random((n, N)) # shape (n, N)
     y = np.random.random(N) # shape (N)
 
-    start = time()
     algo = Algorithm(X, y, r)
-    W = algo.run(num_iterations=200000, max_time=20)
-    print("Algo time ", time()-start)
-    print("Algo obj ", objective(X, y, W))
+    W, results_tsd = algo.run(num_iterations=200000, max_time=20)
 
-    start = time()
     algo = RGD(X, y, r)
-    W = algo.run(num_iterations=20000, max_time=20)
-    print("RGD time ", time()-start)
-    print("RGD obj ", objective(X, y, W))
+    W, results_rgd = algo.run(num_iterations=20000, max_time=20)
+
+    with open("results.json", "w") as f:
+        f.write(json.dumps({"tsd": results_tsd, "rgd": results_rgd}))
